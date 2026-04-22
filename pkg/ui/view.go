@@ -284,7 +284,10 @@ func (v *View) createLeftSection() *fyne.Container {
 	fileRow := container.NewHBox(filenameLabel, openFileBtn)
 
 	keywordEntry := widget.NewEntryWithData(v.vm.Keyword)
-	keywordEntry.ActionItem = nil
+	reg := regexp.MustCompile("[a-z]")
+	rawContent := reg.ReplaceAllString(strings.TrimSpace(keywordEntry.Text), "")
+	content := strings.ToUpper(rawContent) // <--- This is how you get the content
+
 	keywordEntry.SetPlaceHolder(defaultKeywordPlaceholder)
 	keywordFilterBtn := widget.NewButton("Search", func() {
 		filename, _ := v.vm.FileName.Get()
@@ -294,7 +297,7 @@ func (v *View) createLeftSection() *fyne.Container {
 		fmt.Printf("You searched for: %s\n", keywordEntry.Text)
 		fmt.Printf("Your selected date is: %s\n", date)
 		fmt.Printf("Your selected sheet is: %s\n", selectedSheet)
-		v.vm.ExecuteSearch(keywordEntry.Text, date, selectedSheet)
+		v.vm.ExecuteSearch(content, date, selectedSheet)
 	})
 	keywordFilterBtn.Importance = widget.HighImportance
 	keywordRow := container.NewBorder(nil, nil, nil, keywordFilterBtn, keywordEntry)
