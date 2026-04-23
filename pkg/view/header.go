@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -50,16 +49,14 @@ func (h *Header) createLeftSection() *fyne.Container {
 
 	//INFO: This doesn't work, because it needs an event listener
 	keywordEntry := widget.NewEntryWithData(h.vm.Keyword)
-	reg := regexp.MustCompile("[a-z]")
-	rawContent := reg.ReplaceAllString(strings.TrimSpace(keywordEntry.Text), "")
-	content := strings.ToUpper(rawContent) // <--- This is how you get the content
 
 	keywordEntry.SetPlaceHolder(defaultKeywordPlaceholder)
 	keywordFilterBtn := widget.NewButton("Search", func() {
+		content := strings.TrimSpace(keywordEntry.Text) // <--- This is how you get the content
 		filename, _ := h.vm.FileName.Get()
 		date, _ := h.vm.Date.Get()
 		selectedSheet, _ := h.vm.SelectedSheet.Get()
-		slog.Info("metadata", "filename", filename, "keyword", keywordEntry.Text, "date", date, "sheet", selectedSheet)
+		slog.Info("metadata", "filename", filename, "keyword", content, "date", date, "sheet", selectedSheet)
 		h.vm.ExecuteSearch(content, date, selectedSheet)
 	})
 	keywordFilterBtn.Importance = widget.HighImportance
