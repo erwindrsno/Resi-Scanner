@@ -2,7 +2,6 @@ package view
 
 import (
 	"log/slog"
-	"regexp"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -37,12 +36,13 @@ func (f *Footer) Render() fyne.CanvasObject {
 	// 1. Create a shared helper function to avoid repeating code
 	runHighlight := func() {
 		slog.Info("Process highlighting")
-		reg := regexp.MustCompile("[a-z]")
-		rawContent := reg.ReplaceAllString(strings.TrimSpace(scanEntry.Text), "")
-		content := strings.ToUpper(rawContent) // <--- This is how you get the content
-		if content == "" {
-			return
-		}
+		// reg := regexp.MustCompile("[a-z]")
+		// rawContent := reg.ReplaceAllString(strings.TrimSpace(scanEntry.Text), "")
+		// content := strings.ToUpper(rawContent) // <--- This is how you get the content
+		// if content == "" {
+		// 	return
+		// }
+		content := strings.TrimSpace(scanEntry.Text)
 
 		rowIdx := f.vm.ExecuteHighlight(content)
 
