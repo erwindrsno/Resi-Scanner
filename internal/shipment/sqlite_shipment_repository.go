@@ -38,22 +38,18 @@ func (r *SQLiteRepository) Get(filter *ShipmentFilter) ([]Shipment, error) {
 
 	if filter.Date != nil {
 		query += " AND s.date = ?"
-		fmt.Printf("Date query: %s\n", filter.Date)
 		args = append(args, filter.Date.String())
 	}
 
 	if filter.Keyword != "" {
 		query += " AND s.resi_number LIKE ?"
-		fmt.Printf("Keyword query: %s\n", filter.Keyword)
 		args = append(args, "%"+filter.Keyword+"%")
 	}
 
 	if filter.Location != "" {
 		query += " AND l.code LIKE ?"
-		fmt.Printf("Location query: %s\n", filter.Location)
 		args = append(args, "%"+filter.Location+"%")
 	}
-	fmt.Println(query)
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, err
