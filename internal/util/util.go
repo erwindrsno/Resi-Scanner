@@ -47,7 +47,7 @@ func ParseDate(input, layout string) (time.Time, error) {
 	// Parse the 'match' string, not 'cleanedDate'
 	// t, err := time.ParseInLocation("02/01/2006", match, loc)
 	t, err := time.Parse("02/01/2006", match)
-	fmt.Printf("%s\n", t)
+	// fmt.Printf("%s\n", t)
 	if err != nil {
 		return time.Time{}, err
 	}

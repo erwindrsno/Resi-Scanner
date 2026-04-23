@@ -20,7 +20,6 @@ var (
 
 type ViewModel struct {
 	//file section
-	FileName binding.String
 	FilePath binding.String
 	FileURI  binding.URI
 	File     *excelize.File
@@ -53,7 +52,6 @@ type ViewModel struct {
 
 func NewViewModel(service *service.Service) *ViewModel {
 	vm := &ViewModel{
-		FileName:           binding.NewString(),
 		FilePath:           binding.NewString(),
 		FileURI:            binding.NewURI(),
 		File:               nil,
@@ -71,7 +69,6 @@ func NewViewModel(service *service.Service) *ViewModel {
 		// Pvm:              pvm,
 	}
 
-	vm.FileName.Set(defaultFileMessage)
 	vm.ResiFoundStatus.Set(defaultResiFoundStatus)
 	vm.SheetPlaceholder.Set(defaultSheetSelector)
 	vm.KeywordPlaceholder.Set(defaultKeywordPlaceholder)
@@ -90,7 +87,6 @@ func (vm *ViewModel) SelectFile(reader fyne.URIReadCloser) {
 }
 
 func (vm *ViewModel) Clear() {
-	vm.FileName.Set(defaultFileMessage)
 	vm.FilePath.Set("")
 	vm.FileURI.Set(nil)
 	vm.File = nil

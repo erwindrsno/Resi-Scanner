@@ -1,9 +1,8 @@
 package view
 
 import (
-	"fmt"
+	// "fmt"
 	"log/slog"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -43,9 +42,8 @@ func (h *Header) Render() fyne.CanvasObject {
 }
 
 func (h *Header) createLeftSection() *fyne.Container {
-	filenameLabel := widget.NewLabelWithData(h.vm.FileName)
 	openFileBtn := widget.NewButton("Open File", h.showFilePicker)
-	fileRow := container.NewHBox(filenameLabel, openFileBtn)
+	fileRow := container.NewHBox(openFileBtn, layout.NewSpacer())
 
 	//INFO: This doesn't work, because it needs an event listener
 	keywordEntry := widget.NewEntryWithData(h.vm.Keyword)
@@ -53,10 +51,9 @@ func (h *Header) createLeftSection() *fyne.Container {
 	keywordEntry.SetPlaceHolder(defaultKeywordPlaceholder)
 	keywordFilterBtn := widget.NewButton("Search", func() {
 		content := strings.TrimSpace(keywordEntry.Text) // <--- This is how you get the content
-		filename, _ := h.vm.FileName.Get()
 		date, _ := h.vm.Date.Get()
 		selectedSheet, _ := h.vm.SelectedSheet.Get()
-		slog.Info("metadata", "filename", filename, "keyword", content, "date", date, "sheet", selectedSheet)
+		slog.Info("metadata", "keyword", content, "date", date, "sheet", selectedSheet)
 		h.vm.ExecuteSearch(content, date, selectedSheet)
 	})
 	keywordFilterBtn.Importance = widget.HighImportance
@@ -117,35 +114,37 @@ func (h *Header) showFilePicker() {
 		// Get the path and hand it to the ViewModel
 		// Capture the full URI
 		uri := reader.URI()
-		filename := filepath.Base(uri.Path())
-		h.vm.FileURI.Set(uri)
-		h.vm.FileName.Set(filename)
+		filename := uri.Name()
 
 		// For debugging, you can print the full path or string
 		strFileURIDEBUG, _ := h.vm.FileURI.Get()
 		strFilePathDEBUG, _ := h.vm.FilePath.Get()
-		strFileNameDEBUG, _ := h.vm.FileName.Get()
-		slog.Debug("File metadata", "uri", strFileURIDEBUG, "path", strFilePathDEBUG, "name", strFileNameDEBUG)
+		slog.Debug("File metadata", "uri", strFileURIDEBUG, "path", strFilePathDEBUG, "name", filename)
 		h.vm.SelectFile(reader)
 		//TODO:Can put loading UI here
-		h.showPreviewDialog()
+		h.showPreviewDialog(filename)
 	}, h.win)
 }
 
-func (h *Header) showPreviewDialog() {
-	filename, err := h.vm.FileName.Get()
-	if err != nil {
-		slog.Error(err.Error())
-	}
-	d := dialog.NewConfirm("Import Preview", fmt.Sprintf("You are going to import %s", filename), func(b bool) {
-		if b {
-			slog.Info("Processing excel", "file", filename)
-			h.vm.ImportConfirmed(h.vm.File)
-		} else {
-			slog.Info("Cancelling excel processing")
-		}
-	}, h.win)
-	d.Resize(fyne.NewSize(400, 300))
+func (h *Header) showPreviewDialog(filename string) {
+	content := container.NewVBox(
+		widget.NewLabelWithStyle("You are going to import:", fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		widget.NewLabelWithStyle(filename, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+	)
+
+	d := dialog.NewCustomConfirm(
+		"Import Preview",
+		"Confirm",
+		"Cancel",
+		content,
+		func(b bool) {
+			if b {
+				h.vm.ImportConfirmed(h.vm.File)
+			}
+		},
+		h.win,
+	)
+	d.Resize(fyne.NewSize(400, 200))
 	d.Show()
 }
 

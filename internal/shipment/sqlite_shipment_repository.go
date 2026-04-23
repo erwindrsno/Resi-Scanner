@@ -20,7 +20,6 @@ func (r *SQLiteRepository) Insert(s *Shipment) error {
 }
 
 func (r *SQLiteRepository) InsertByTx(tx *sql.Tx, s *Shipment) error {
-	fmt.Println(s.ResiNumber)
 	query := `INSERT INTO shipments (id, resi_number, location_id, destination, weight, koli, notes, date, is_scanned) 
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
