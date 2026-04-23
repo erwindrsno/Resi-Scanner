@@ -2,7 +2,7 @@ package service
 
 import (
 	"database/sql"
-	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/erwindrsno/resi-scanner/internal/constant"
@@ -11,18 +11,18 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-type ImportService struct {
+type Service struct {
 	Repo shipment.ShipmentRepository
 }
 
-func (s *ImportService) ProcessExcel(f *excelize.File) error {
+func (s *Service) ProcessExcel(f *excelize.File) error {
 	rawDate, err := f.GetCellValue(constant.Sheets[0], "B1")
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
 	date, err := util.ParseDate(rawDate, constant.Layout)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
 
 	return s.Repo.WithTransaction(func(tx *sql.Tx) error {
@@ -30,7 +30,7 @@ func (s *ImportService) ProcessExcel(f *excelize.File) error {
 			rows, err := f.Rows(sheet)
 
 			if err != nil {
-				fmt.Println(err)
+				slog.Error(err.Error())
 			}
 
 			counter := 0
@@ -43,7 +43,7 @@ func (s *ImportService) ProcessExcel(f *excelize.File) error {
 
 				row, err := rows.Columns()
 				if err != nil {
-					fmt.Println(err)
+					slog.Error(err.Error())
 				}
 				if row[0] == "TOTAL" {
 					break
@@ -51,11 +51,11 @@ func (s *ImportService) ProcessExcel(f *excelize.File) error {
 
 				var locationId int
 				switch sheet {
-				case "BTH":
+				case constant.Sheets[0]:
 					locationId = 1
-				case "TBK":
+				case constant.Sheets[1]:
 					locationId = 2
-				case "TNJ":
+				case constant.Sheets[2]:
 					locationId = 3
 				default:
 					locationId = 0
@@ -80,34 +80,28 @@ func (s *ImportService) ProcessExcel(f *excelize.File) error {
 	})
 }
 
-func (s *ImportService) RunSearch(keyword, date, selectedSheet string) []shipment.Shipment {
+func (s *Service) RunSearch(keyword, date, selectedSheet string) []shipment.Shipment {
 	parsedDate, err := time.Parse(constant.Layout, date)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
-	// parsedDate, err := time.Parse(constant.Layout, date)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
 	filter := &shipment.ShipmentFilter{
 		Keyword:  keyword,
 		Date:     &parsedDate,
 		Location: selectedSheet,
 	}
-	fmt.Println(filter)
 
 	results, err := s.Repo.Get(filter)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
-	fmt.Println(results)
 	return results
 }
 
-func (s *ImportService) RunHighlight(resiNumber string) bool {
+func (s *Service) RunHighlight(resiNumber string) bool {
 	err := s.Repo.UpdateIsScannedByResiNumber(resiNumber)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return false
 	}
 	return true

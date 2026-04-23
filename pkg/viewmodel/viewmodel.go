@@ -1,7 +1,7 @@
-package ui
+package viewmodel
 
 import (
-	"fmt"
+	"log/slog"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/data/binding"
@@ -12,13 +12,10 @@ import (
 )
 
 var (
-	defaultFileMessage            = "No file selected."
-	defaultSheetSelector          = "Select a sheet..."
-	defaultKeywordPlaceholder     = "Filter a word"
-	defaultResiFoundStatus        = "-"
-	defaultScanPlaceholderMessage = "Enter or Scan barcode..."
-	resiNotFoundStatus            = "Not found."
-	resiFoundStatus               = "Found"
+	defaultFileMessage        = "No file selected."
+	defaultSheetSelector      = "Select a sheet..."
+	defaultKeywordPlaceholder = "Filter a word"
+	defaultResiFoundStatus    = "-"
 )
 
 type ViewModel struct {
@@ -41,7 +38,7 @@ type ViewModel struct {
 	KeywordPlaceholder binding.String
 
 	ResiFoundStatus binding.String
-	ImportService   *service.ImportService
+	Service         *service.Service
 
 	//footer
 	Resi binding.String
@@ -54,7 +51,7 @@ type ViewModel struct {
 	// Pvm              *PreviewViewModel
 }
 
-func NewViewModel(importService *service.ImportService) *ViewModel {
+func NewViewModel(service *service.Service) *ViewModel {
 	vm := &ViewModel{
 		FileName:           binding.NewString(),
 		FilePath:           binding.NewString(),
@@ -67,7 +64,7 @@ func NewViewModel(importService *service.ImportService) *ViewModel {
 		Keyword:            binding.NewString(),
 		KeywordPlaceholder: binding.NewString(),
 		ResiFoundStatus:    binding.NewString(),
-		ImportService:      importService,
+		Service:            service,
 		Resi:               binding.NewString(),
 		Shipments:          make([]shipment.Shipment, 0),
 
@@ -86,8 +83,7 @@ func (vm *ViewModel) SelectFile(reader fyne.URIReadCloser) {
 	defer reader.Close()
 	f, err := excelize.OpenReader(reader)
 	if err != nil {
-		// dialog.ShowError(err, s.window)
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return
 	}
 	vm.File = f
@@ -113,7 +109,7 @@ func (vm *ViewModel) ExecuteSearch(keyword, date, sheet string) {
 	if sheet == "" {
 		return
 	}
-	results := vm.ImportService.RunSearch(keyword, date, sheet)
+	results := vm.Service.RunSearch(keyword, date, sheet)
 
 	// 2. Update the raw data
 	vm.Shipments = results
@@ -125,19 +121,19 @@ func (vm *ViewModel) ExecuteSearch(keyword, date, sheet string) {
 }
 
 func (vm *ViewModel) ExecuteHighlight(resiNumber string) int {
-	vm.ImportService.RunHighlight(resiNumber)
+	vm.Service.RunHighlight(resiNumber)
 
 	keyword, err := vm.Keyword.Get()
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
 	date, err := vm.Date.Get()
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
 	sheet, err := vm.SelectedSheet.Get()
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
 
 	// 2. Find the row index of the scanned Resi
@@ -152,4 +148,11 @@ func (vm *ViewModel) ExecuteHighlight(resiNumber string) int {
 	vm.ExecuteSearch(keyword, date, sheet)
 
 	return targetRow
+}
+
+func (vm *ViewModel) ImportConfirmed(f *excelize.File) {
+	err := vm.Service.ProcessExcel(f)
+	if err != nil {
+		slog.Error(err.Error())
+	}
 }
