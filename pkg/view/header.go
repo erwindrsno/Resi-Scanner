@@ -22,8 +22,9 @@ var (
 )
 
 type Header struct {
-	vm  *viewmodel.ViewModel
-	win fyne.Window
+	vm        *viewmodel.ViewModel
+	win       fyne.Window
+	OnLoading func(bool)
 }
 
 func NewHeader(vm *viewmodel.ViewModel, win fyne.Window) *Header {
@@ -45,7 +46,6 @@ func (h *Header) createLeftSection() *fyne.Container {
 	openFileBtn := widget.NewButton("Open File", h.showFilePicker)
 	fileRow := container.NewHBox(openFileBtn, layout.NewSpacer())
 
-	//INFO: This doesn't work, because it needs an event listener
 	keywordEntry := widget.NewEntryWithData(h.vm.Keyword)
 
 	keywordEntry.SetPlaceHolder(defaultKeywordPlaceholder)
@@ -139,7 +139,13 @@ func (h *Header) showPreviewDialog(filename string) {
 		content,
 		func(b bool) {
 			if b {
-				h.vm.ImportConfirmed(h.vm.File)
+				h.OnLoading(true)
+				go func() {
+					h.vm.ImportConfirmed(h.vm.File)
+					fyne.Do(func() {
+						h.OnLoading(false)
+					})
+				}()
 			}
 		},
 		h.win,

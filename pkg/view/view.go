@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 
 	"fyne.io/fyne/v2/widget"
 )
@@ -25,6 +26,9 @@ type View struct {
 
 	h *Header
 	f *Footer
+
+	loadingDialog dialog.Dialog
+	progBar       *widget.ProgressBarInfinite
 }
 
 func NewView(win fyne.Window, vm *viewmodel.ViewModel) *View {
@@ -38,8 +42,31 @@ func NewView(win fyne.Window, vm *viewmodel.ViewModel) *View {
 		v.dataTable.ScrollToTop() // Prevents being stuck at the bottom
 	}
 
+	v.progBar = widget.NewProgressBarInfinite()
+	v.progBar.Hide()
+
+	content := container.NewVBox(
+		widget.NewLabelWithStyle("Please wait...", fyne.TextAlignCenter, fyne.TextStyle{Bold: false}),
+		v.progBar,
+	)
+
+	v.loadingDialog = dialog.NewCustomWithoutButtons(
+		"",
+		content,
+		v.win,
+	)
+	v.loadingDialog.Resize(fyne.NewSize(400, 150))
+
 	v.h = NewHeader(vm, win)
 	v.f = NewFooter(vm, win)
+
+	v.h.OnLoading = func(isLoading bool) {
+		if isLoading {
+			v.showLoadingDialog(true)
+		} else {
+			v.showLoadingDialog(false)
+		}
+	}
 	return v
 }
 
@@ -47,7 +74,6 @@ func (v *View) Render() fyne.CanvasObject {
 	v.f.OnSearchSuccess = func(rowIdx int) {
 		if rowIdx != -1 {
 			v.dataTable.ScrollTo(widget.TableCellID{Row: rowIdx, Col: 0})
-			// v.dataTable.Select(widget.TableCellID{Row: rowIdx, Col: 0})
 			// TODO: Can't use hardcoded value below.
 			v.vm.ResiFoundStatus.Set("FOUND.")
 		} else {
@@ -62,6 +88,18 @@ func (v *View) Render() fyne.CanvasObject {
 		nil, nil,     // Left, Right
 		v.dataTable, // Center
 	)
+}
+
+func (v *View) showLoadingDialog(isLoading bool) {
+	if isLoading {
+		v.loadingDialog.Show()
+		v.progBar.Show()
+		v.progBar.Start()
+	} else {
+		v.progBar.Stop()
+		v.progBar.Hide()
+		v.loadingDialog.Dismiss()
+	}
 }
 
 func (v *View) CreateTable() *widget.Table {
